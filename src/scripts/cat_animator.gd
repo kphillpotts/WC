@@ -4,7 +4,7 @@ extends AnimatedSprite2D
 ## script, or later an NPC AI script) calls report_movement() every
 ## physics frame; this script figures out what to actually play.
 
-enum LocoState { WALKING, RUNNING, STANDING, SITTING_DOWN, SITTING, LICKING, OBSERVING, STANDING_UP }
+enum LocoState { WALKING, RUNNING, STANDING, JUMPING, SITTING_DOWN, SITTING, LICKING, OBSERVING, STANDING_UP }
 #
 # NOTE: STANDING is used for both "just stopped" and "been stationary a
 # while", since there's only one at-rest sprite sheet. Standing still long
@@ -21,6 +21,13 @@ enum LocoState { WALKING, RUNNING, STANDING, SITTING_DOWN, SITTING, LICKING, OBS
 # LICKING / OBSERVING are drawn in the same seated pose as the sitting
 # idle, so they need no transition of their own — they just take over the
 # sprite for a few seconds and hand it straight back to SITTING.
+#
+# JUMPING has no sprite sheet of its own. It borrows two poses from the run
+# cycle — the gathered frame for the crouch and launch, the fully extended
+# frame for the airborne stretch — and sells the leap with a parabola on
+# the sprite's offset instead. The frame is picked from elapsed progress
+# rather than played back, so the clip can never drift out of sync with
+# jump_duration however that gets tuned.
 
 # Seated in any pose, including the transitions either side. The cat is not
 # free to move in any of these.
@@ -31,6 +38,18 @@ const SETTLED_STATES := [LocoState.SITTING, LocoState.LICKING, LocoState.OBSERVI
 # One-shot flavour animations played out of the sitting idle.
 const IDLE_ACTION_STATES := [LocoState.LICKING, LocoState.OBSERVING]
 
+@export_group("Jump")
+## How long a leap takes from launch to landing.
+@export var jump_duration: float = 0.45
+## Peak height of the arc, in pixels. Applied to the sprite's offset, not its
+## position, so lifting the cat can't disturb Y-sorting and make it draw
+## behind the very thing it's leaping over.
+@export var jump_height: float = 14.0
+## Fractions of the leap spent crouched at launch and again on landing; the
+## stretched airborne pose fills everything between them.
+@export_range(0.0, 0.5) var jump_crouch_fraction: float = 0.15
+
+@export_group("")
 ## Seconds of standing perfectly still before the cat sits down of its own
 ## accord. Set to 0 (or less) to disable the escalation entirely.
 @export var auto_sit_delay: float = 10.0
@@ -54,9 +73,12 @@ var facing: String = "down"
 # whichever countdown applies.
 var _state_time: float = 0.0
 var _next_action_delay: float = 0.0
+# The authored art alignment, which the jump arc is applied on top of.
+var _base_offset_y: float = 0.0
 
 
 func _ready() -> void:
+	_base_offset_y = offset.y
 	animation_finished.connect(_on_animation_finished)
 	_roll_next_action_delay()
 	_play_for_state()
@@ -66,6 +88,8 @@ func _process(delta: float) -> void:
 	_state_time += delta
 
 	match loco_state:
+		LocoState.JUMPING:
+			_advance_jump()
 		LocoState.STANDING:
 			if auto_sit_delay > 0.0 and _state_time >= auto_sit_delay:
 				sit()
@@ -79,7 +103,7 @@ func _process(delta: float) -> void:
 ## Ignored while sitting or mid-transition — those postures own the sprite
 ## until sit()/stand_up() releases them.
 func report_movement(input_vector: Vector2, running: bool = false) -> void:
-	if is_seated():
+	if is_seated() or is_jumping():
 		return
 
 	if input_vector != Vector2.ZERO:
@@ -99,6 +123,21 @@ func is_seated() -> bool:
 ## observing. False while either transition is still playing.
 func is_sitting() -> bool:
 	return loco_state in SETTLED_STATES
+
+
+## True from launch until the cat has landed.
+func is_jumping() -> bool:
+	return loco_state == LocoState.JUMPING
+
+
+## Launch into a leap in the direction the cat is already facing. Returns
+## false if it isn't in a position to jump — seated, or already airborne —
+## so the caller knows not to commit any leap velocity.
+func jump() -> bool:
+	if is_seated() or is_jumping():
+		return false
+	_set_state(LocoState.JUMPING)
+	return true
 
 
 ## True while a sit-down/stand-up transition is still playing.
@@ -144,6 +183,8 @@ func _update_facing(input_vector: Vector2) -> void:
 func _set_state(new_state: LocoState) -> void:
 	if new_state == loco_state:
 		return
+	if loco_state == LocoState.JUMPING:
+		offset.y = _base_offset_y
 	loco_state = new_state
 	_state_time = 0.0
 	if new_state == LocoState.SITTING:
@@ -163,6 +204,11 @@ func _play_for_state() -> void:
 			play("run_%s" % facing)
 		LocoState.STANDING:
 			play("stand_%s" % facing)
+		LocoState.JUMPING:
+			# Frames are driven by _advance_jump(), not played back.
+			animation = "jump_%s" % facing
+			stop()
+			_advance_jump()
 		LocoState.SITTING_DOWN:
 			play("sit_transition_%s" % facing)
 		LocoState.SITTING:
@@ -174,6 +220,21 @@ func _play_for_state() -> void:
 		LocoState.STANDING_UP:
 			# Same clip as sitting down, run in reverse.
 			play_backwards("sit_transition_%s" % facing)
+
+
+## Pose and lift the cat according to how far through the leap it is.
+func _advance_jump() -> void:
+	var p := clampf(_state_time / maxf(jump_duration, 0.001), 0.0, 1.0)
+	# Parabola peaking at jump_height halfway through.
+	offset.y = _base_offset_y - jump_height * 4.0 * p * (1.0 - p)
+	if p < jump_crouch_fraction:
+		frame = 0
+	elif p < 1.0 - jump_crouch_fraction:
+		frame = 1
+	else:
+		frame = 2
+	if p >= 1.0:
+		_set_state(LocoState.STANDING)
 
 
 ## play() on a non-looping clip that has already run to its end won't rewind
