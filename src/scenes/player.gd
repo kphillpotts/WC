@@ -31,7 +31,7 @@ const FACING_VECTORS := {
 
 
 func _physics_process(_delta: float) -> void:
-	var input_vector := Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
+	var input_vector := Input.get_vector("move_left", "move_right", "move_up", "move_down")
 
 	if animator.is_jumping():
 		_process_leap()
