@@ -461,17 +461,24 @@ animations = [{
 "speed": 5.0
 }]
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_i4ail"]
-size = Vector2(20, 12)
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_qlg0r"]
+radius = 4.0
+height = 24.0
 
 [node name="Player" type="CharacterBody2D" unique_id=1195548331]
+y_sort_enabled = true
+collision_mask = 3
 script = ExtResource("1_g2els")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1066652887]
 sprite_frames = SubResource("SpriteFrames_60mlk")
 animation = &"run_down"
+offset = Vector2(0, -10)
 script = ExtResource("4_qlg0r")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=205827218]
-position = Vector2(-1, 9)
-shape = SubResource("RectangleShape2D_i4ail")
+position = Vector2(0, 2)
+rotation = -1.5707964
+shape = SubResource("CapsuleShape2D_qlg0r")
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=643840386]
