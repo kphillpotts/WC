@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://csidoah82xw2r"
-path="res://.godot/imported/MILKY_CAT_WALKING.png-516e0ed2bbc096a2f31e8f9fa9cc456f.ctex"
+uid="uid://bsp7deci0cpkd"
+path="res://.godot/imported/player_standing.png-14352d9f00270e262616058f94f919fb.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/player/MILKY_CAT_WALKING.png"
-dest_files=["res://.godot/imported/MILKY_CAT_WALKING.png-516e0ed2bbc096a2f31e8f9fa9cc456f.ctex"]
+source_file="res://assets/player/player_standing.png"
+dest_files=["res://.godot/imported/player_standing.png-14352d9f00270e262616058f94f919fb.ctex"]
 
 [params]
 

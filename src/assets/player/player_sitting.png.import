@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://hvdxb62lg2oi"
-path="res://.godot/imported/MILKY_CAT_STANDING.png-50ce1c541f0b0c5bdb72fdafa43559c1.ctex"
+uid="uid://bunydaagcr17v"
+path="res://.godot/imported/player_sitting.png-c2ed01891d5cc96173e41de12aaef4b9.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/player/MILKY_CAT_STANDING.png"
-dest_files=["res://.godot/imported/MILKY_CAT_STANDING.png-50ce1c541f0b0c5bdb72fdafa43559c1.ctex"]
+source_file="res://assets/player/player_sitting.png"
+dest_files=["res://.godot/imported/player_sitting.png-c2ed01891d5cc96173e41de12aaef4b9.ctex"]
 
 [params]
 
