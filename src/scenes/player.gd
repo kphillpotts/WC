@@ -37,6 +37,21 @@ const FACING_VECTORS := {
 @export var pounce_max_duration: float = 0.5
 @export var pounce_max_height: float = 16.0
 
+@export_group("Hunting")
+## How close the cat has to come down to a chick for the landing to count as
+## catching it.
+@export var catch_radius: float = 10.0
+## Multipliers on prey detection range for each stance, read by prey through
+## get_stealth_factor(). The gap between crawling and walking is what makes
+## the crouch a hunting stance rather than just a slow one: crawling gets the
+## cat inside pounce range unnoticed, strolling up does not.
+@export var stealth_crouched: float = 0.35
+@export var stealth_crawling: float = 0.5
+@export var stealth_still: float = 0.7
+@export var stealth_walking: float = 1.0
+## Also covers being airborne — a cat mid-leap is about as subtle as it gets.
+@export var stealth_running: float = 1.4
+
 @onready var animator: AnimatedSprite2D = $AnimatedSprite2D
 @onready var pounce_target: Node2D = $PounceTarget
 
@@ -51,6 +66,9 @@ var _leap_velocity: Vector2 = Vector2.ZERO
 var _obstacles_ignored: bool = false
 # Direction the marker is currently sweeping.
 var _power_direction: float = 1.0
+# True on any frame spent in the air, so the frame after a leap ends can tell
+# it was a landing and check what the cat came down on.
+var _airborne_last_frame: bool = false
 
 
 func _physics_process(delta: float) -> void:
@@ -59,6 +77,11 @@ func _physics_process(delta: float) -> void:
 	if animator.is_jumping():
 		_process_leap()
 		return
+
+	if _airborne_last_frame:
+		# Just came down. Anything small under the paws is dinner.
+		_airborne_last_frame = false
+		_catch_prey_underfoot()
 
 	if _obstacles_ignored:
 		# Landed inside something solid. Stay permeable until the cat has
@@ -212,11 +235,46 @@ func _start_leap(input_vector: Vector2) -> bool:
 
 
 func _process_leap() -> void:
+	_airborne_last_frame = true
 	velocity = _leap_velocity
 	move_and_slide()
 	if not animator.is_jumping() and _obstacles_ignored:
 		_try_restore_obstacle_collision()
 
+
+# --- Hunting -----------------------------------------------------------------
+
+## Kill anything in the "prey" group the cat has just landed on top of.
+## Distance against the landing point rather than a hitbox: it needs no extra
+## frame for an Area2D to register overlaps, which matters when the whole
+## check happens on the single frame the leap ends.
+func _catch_prey_underfoot() -> void:
+	var reach := catch_radius * catch_radius
+	for prey: Node2D in get_tree().get_nodes_in_group("prey"):
+		if global_position.distance_squared_to(prey.global_position) <= reach:
+			prey.catch()
+
+
+## How conspicuous the cat is right now, as a multiplier on prey detection
+## radius. Prey read this instead of inspecting the cat's stances, so what
+## counts as sneaking stays in one place here rather than spread across every
+## animal that might care.
+func get_stealth_factor() -> float:
+	if animator.is_jumping():
+		return stealth_running
+
+	var moving := velocity.length() > 1.0
+
+	if animator.is_crouched() or animator.is_crouch_transitioning():
+		return stealth_crawling if moving else stealth_crouched
+
+	if not moving:
+		return stealth_still
+
+	return stealth_running if velocity.length() > walk_speed + 1.0 else stealth_walking
+
+
+# --- Leaping (continued) -----------------------------------------------------
 
 ## Make obstacles solid again, but only once the cat isn't standing in one.
 func _try_restore_obstacle_collision() -> void:

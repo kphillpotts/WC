@@ -1204,7 +1204,7 @@ animations = [{
 radius = 4.0
 height = 24.0
 
-[node name="Player" type="CharacterBody2D" unique_id=1195548331]
+[node name="Player" type="CharacterBody2D" unique_id=1195548331 groups=["player"]]
 y_sort_enabled = true
 collision_mask = 3
 script = ExtResource("1_g2els")

@@ -4,6 +4,7 @@
 [ext_resource type="TileSet" uid="uid://du0b2ynrgiits" path="res://tilesets/camping.tres" id="2_3263u"]
 [ext_resource type="TileSet" uid="uid://c1w464ssxgupx" path="res://tilesets/terrain.tres" id="2_umbte"]
 [ext_resource type="Script" uid="uid://b72vhrvtt8x3x" path="res://scripts/pounce_meter.gd" id="4_pounce"]
+[ext_resource type="PackedScene" uid="uid://dxkibwxpom1yf" path="res://scenes/chick.tscn" id="5_chick"]
 
 [node name="TestWorld" type="Node2D" unique_id=1127171660]
 y_sort_enabled = true
@@ -22,6 +23,21 @@ tile_map_data = PackedByteArray("AAAGAP//AAAEADcAAAACAAUAAAAEADcAAAD8/wQAAAAIADo
 tile_set = ExtResource("2_3263u")
 
 [node name="Player" parent="." unique_id=1195548331 instance=ExtResource("1_kyfjp")]
+
+[node name="Chicks" type="Node2D" parent="."]
+y_sort_enabled = true
+
+[node name="Chick1" parent="Chicks" instance=ExtResource("5_chick")]
+position = Vector2(64, 64)
+
+[node name="Chick2" parent="Chicks" instance=ExtResource("5_chick")]
+position = Vector2(-96, 96)
+
+[node name="Chick3" parent="Chicks" instance=ExtResource("5_chick")]
+position = Vector2(160, -64)
+
+[node name="Chick4" parent="Chicks" instance=ExtResource("5_chick")]
+position = Vector2(-160, -32)
 
 [node name="HUD" type="CanvasLayer" parent="." unique_id=1440228317]
 
